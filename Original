@@ -1,0 +1,101 @@
+/* https://github.com/BelfrySCAD/BOSL2 */
+include <BOSL2/std.scad>
+
+fan_size = 80;  // [40,60,80,92,120]
+// Thickness of plate that attaches to the fan
+plate_thickness = 2;
+
+// Length of shroud between fan and GPU
+shroud_length = 30;
+// Thickness of shroud wall
+shroud_thickness = 4;
+
+// Vertical shroud offset, 0 = flush at the bottom, positive number = fan towards the bottom
+shroud_offset_v = 0;
+// Horizontal shroud offset, 0 = centered, positive number = fan towards the right
+shroud_offset_h = 0;
+
+fan_diameter = fan_size-2;
+
+/* [Hidden] */
+
+mounting_hole_diameter = 4.4;
+
+gpu_width = 18.7;
+gpu_height = 54.5;
+gpu_length = 15;
+gpu_pcb_width = 1.7;
+gpu_pcb_height = 56.6;
+gpu_pcb_h_offset = 18.5/2-2.6-1.7/2;
+gpu_pcb_l_offset = 2;
+
+$fn = 150;
+
+difference() {
+    group() {
+        /* Plate */
+        cuboid([fan_size, fan_size, plate_thickness], rounding=mounting_hole_diameter, edges="Z");
+        
+        /* Shroud outside */
+        hull() {
+            cylinder(d=fan_diameter, h=plate_thickness, center=true);
+            
+            translate([shroud_offset_h, (gpu_height+shroud_thickness-fan_size)/2+shroud_offset_v, shroud_length])
+                cube([gpu_width+shroud_thickness, gpu_height+shroud_thickness, shroud_thickness], center=true);
+        }
+        
+        /* Straight piece outside */
+        translate([shroud_offset_h, (gpu_height+shroud_thickness-fan_size)/2+shroud_offset_v, shroud_length+gpu_length/2])
+            cube([gpu_width+shroud_thickness, gpu_height+shroud_thickness, gpu_length], center=true);
+    }
+
+    group() {
+        /* Plate hole */
+        cylinder(d=fan_diameter-2*shroud_thickness, h=plate_thickness, center=true);
+        
+        
+        /* Shroud inside */
+        hull() {
+            cylinder(d=fan_diameter-2*shroud_thickness, h=plate_thickness, center=true);
+            
+            translate([shroud_offset_h, (gpu_height+shroud_thickness-fan_size)/2+shroud_offset_v, shroud_length])
+                cube([gpu_width, gpu_height, shroud_thickness], center=true);
+        }
+        
+        /* Straight piece inside */
+        translate([shroud_offset_h, (gpu_height+shroud_thickness-fan_size)/2+shroud_offset_v, 0]) {
+            group() {
+                translate([0, 0, shroud_length+gpu_length/2])
+                    cube([gpu_width, gpu_height, gpu_length], center=true);
+                
+                /* PCB cutout */
+                translate([-gpu_pcb_h_offset, 0, shroud_length+gpu_length/2+gpu_pcb_l_offset])
+                    cube([gpu_pcb_width, gpu_pcb_height, gpu_length-gpu_pcb_l_offset], center=true);
+            }
+        }
+        
+        /* Mounting holes */
+        for (i = [-1, 1]) {
+            for (j = [-1, 1]) {
+                if(fan_size == 40) let(mounting_hole_offset=32/2)
+                    translate([i * mounting_hole_offset, j * mounting_hole_offset, 0])
+                        cylinder(d=mounting_hole_diameter, h=plate_thickness, center=true);
+                if(fan_size == 60) let(mounting_hole_offset=50/2)
+                    translate([i * mounting_hole_offset, j * mounting_hole_offset, 0])
+                        cylinder(d=mounting_hole_diameter, h=plate_thickness, center=true);
+                if(fan_size == 80) let(mounting_hole_offset=71.5/2)
+                    translate([i * mounting_hole_offset, j * mounting_hole_offset, 0])
+                        cylinder(d=mounting_hole_diameter, h=plate_thickness, center=true);
+                if(fan_size == 92) let(mounting_hole_offset=82/2)
+                    translate([i * mounting_hole_offset, j * mounting_hole_offset, 0])
+                        cylinder(d=mounting_hole_diameter, h=plate_thickness, center=true);
+                if(fan_size == 120) let(mounting_hole_offset=105/2)
+                    translate([i * mounting_hole_offset, j * mounting_hole_offset, 0])
+                        cylinder(d=mounting_hole_diameter, h=plate_thickness, center=true);
+            }
+        }
+    }
+}
+
+
+
