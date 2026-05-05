@@ -4,6 +4,10 @@
 Based on this design:
 https://makerworld.com/en/models/1374688-nvidia-tesla-t4-customizable-fan-shroud-adapter?from=search#profileId-1422068
 
+Added elbows using AI. 
+
 Click on the "Customize" button. From the resulting page, click on "Code". Replace the code with the version you wnat (left-facing elbow or right-facing elbow).
 
 Select the fan size and click "Generate". Funky stuff happens if you try to modify the other parameters. 
+
+All credit to original designer. 
