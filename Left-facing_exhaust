@@ -1,0 +1,131 @@
+include <BOSL2/std.scad>
+
+fan_size = 80;  // [40,60,80,92,120]
+plate_thickness = 2;
+shroud_length = 30;
+shroud_thickness = 4;
+shroud_offset_v = 0;
+shroud_offset_h = 0;
+elbow_radius = 35;
+elbow_steps = 90;
+
+fan_diameter = fan_size - 2;
+
+/* [Hidden] */
+mounting_hole_diameter = 4.4;
+
+gpu_width  = 18.7;
+gpu_height = 54.5;
+gpu_length = 15;
+gpu_pcb_width    = 1.7;
+gpu_pcb_height   = 56.6;
+gpu_pcb_h_offset = 18.5/2 - 2.6 - 1.7/2;
+gpu_pcb_l_offset = 2;
+
+$fn = 150;
+
+shroud_end_x = shroud_offset_h;
+shroud_end_y = (gpu_height + shroud_thickness - fan_size) / 2 + shroud_offset_v;
+shroud_end_z = shroud_length;
+
+duct_w_o = gpu_width  + shroud_thickness;
+duct_h_o = gpu_height + shroud_thickness;
+duct_w_i = gpu_width;
+duct_h_i = gpu_height;
+
+gpu_slot_x = shroud_end_x + elbow_radius;
+gpu_slot_y = shroud_end_y;
+gpu_slot_z = shroud_end_z + elbow_radius;
+
+function arc_point(a) = [
+    shroud_end_x + elbow_radius * (1 - cos(a)),
+    shroud_end_y,
+    shroud_end_z + elbow_radius * sin(a)
+];
+
+function elbow_path() = [for (i = [0 : elbow_steps]) arc_point(i * 90 / elbow_steps)];
+
+function rect_profile(w, h) = [
+    [-w/2, -h/2], [w/2, -h/2], [w/2, h/2], [-w/2, h/2]
+];
+
+module elbow_sweep(w, h) {
+    path_sweep(
+        rect_profile(w, h),
+        elbow_path(),
+        closed = false,
+        method = "incremental"
+    );
+}
+
+module gpu_slot(w, h) {
+    translate([gpu_slot_x + gpu_length/2, gpu_slot_y, gpu_slot_z])
+        cube([gpu_length, h, w], center = true);
+}
+
+difference() {
+    group() {
+        cuboid([fan_size, fan_size, plate_thickness],
+               rounding = mounting_hole_diameter, edges = "Z");
+
+        hull() {
+            cylinder(d = fan_diameter, h = plate_thickness, center = true);
+            translate([shroud_end_x, shroud_end_y, shroud_end_z])
+                cube([duct_w_o, duct_h_o, shroud_thickness], center = true);
+        }
+
+        elbow_sweep(duct_w_o, duct_h_o);
+
+        gpu_slot(duct_w_o, duct_h_o);
+    }
+
+    group() {
+        cylinder(d = fan_diameter - 2*shroud_thickness,
+                 h = plate_thickness, center = true);
+
+        hull() {
+            cylinder(d = fan_diameter - 2*shroud_thickness,
+                     h = plate_thickness, center = true);
+            translate([shroud_end_x, shroud_end_y, shroud_end_z])
+                cube([duct_w_i, duct_h_i, shroud_thickness], center = true);
+        }
+
+        elbow_sweep(duct_w_i, duct_h_i);
+
+        gpu_slot(duct_w_i, duct_h_i);
+
+        // PCB cutout — mirrors the original logic, reoriented for the rotated outlet.
+        // At the outlet: gpu_height spans Z, gpu_width spans Y.
+        // Original: thin slot gpu_pcb_width in X, gpu_pcb_height in Y, offset in X.
+        // Rotated:  thin slot gpu_pcb_width in Z, gpu_pcb_height in Y, offset in Z.
+        // gpu_pcb_l_offset shortens it from the elbow-side (lower X) end.
+        translate([
+            gpu_slot_x + gpu_pcb_l_offset + (gpu_length - gpu_pcb_l_offset)/2,
+            gpu_slot_y,
+            gpu_slot_z - gpu_pcb_h_offset
+        ])
+            cube([
+                gpu_length - gpu_pcb_l_offset,
+                gpu_pcb_height,
+                gpu_pcb_width
+            ], center = true);
+
+        for (i = [-1, 1]) for (j = [-1, 1]) {
+            if (fan_size == 40) let(o = 32/2)
+                translate([i*o, j*o, 0])
+                    cylinder(d = mounting_hole_diameter, h = plate_thickness, center = true);
+            if (fan_size == 60) let(o = 50/2)
+                translate([i*o, j*o, 0])
+                    cylinder(d = mounting_hole_diameter, h = plate_thickness, center = true);
+            if (fan_size == 80) let(o = 71.5/2)
+                translate([i*o, j*o, 0])
+                    cylinder(d = mounting_hole_diameter, h = plate_thickness, center = true);
+            if (fan_size == 92) let(o = 82/2)
+                translate([i*o, j*o, 0])
+                    cylinder(d = mounting_hole_diameter, h = plate_thickness, center = true);
+            if (fan_size == 120) let(o = 105/2)
+                translate([i*o, j*o, 0])
+                    cylinder(d = mounting_hole_diameter, h = plate_thickness, center = true);
+        }
+    }
+}
